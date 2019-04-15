@@ -1,348 +1,5 @@
-
-
--------------------------------------------------------------------------------------------------------------------
--- Setup functions for this job.  Generally should not be modified.
--------------------------------------------------------------------------------------------------------------------
-    
--- === Features ===
--- !!!!Make sure you have my User-Globals.lua!!! Do not rename it. It goes in the data folder along side this file.
-
--- If you don't use organizer, then remove the include('organizer-lib') in get_sets() and remove sets.Organizer
-
--- This lua has a few MODES you can toggle with hotkeys, and there's a few situational RULES that activate without hotkeys
--- I'd recommend reading and understanding the following information if you plan on using this file.
-
--- ::MODES::
-
--- SouleaterMode: OFF by default. Toggle this with @F9 (window key + F9). 
--- This mode makes it possible to use Souleater in situations where you would normally avoid using it. When SouleaterMode 
--- is ON, Souleater will be canceled automatically after the first Weaponskill used, WITH THESE EXCEPTIONS. If Bloodweapon 
--- is active, or if Drain's HP Boost buff is active, then Souleater will remain active until the next WS used after 
--- either buff wears off. If you use DRK at events, I'd recommend making this default to ON, as it's damn useful.
-
--- LastResortMode: Removed.  In it's place, I'm testing a rule that automatically applies / removes hasso
-
--- CapacityMode OFF by default. Toggle with ALT + = 
--- It will full-time whichever piece of gear you specify in sets.CapacityMantle 
-
--- PhysicalDefenseMode: OFF by default. toggle with ^f10 (^f10). 
-
--- This mode makes it possible to use Souleater in situations where you would normally avoid using it. When SouleaterMode 
--- is ON, Souleater will be canceled automatically after the first Weaponskill used, WITH THESE EXCEPTIONS. If Bloodweapon 
--- is active, or if Drain's HP Boost buff is active, then Souleater will remain active until the next WS used after 
--- either buff wears off. If you use DRK at events, I'd recommend making this default to ON, as it's damn useful.
-
--- NOTE: You can change the default (true|false) status of any MODE by changing their values in job_setup()
-
--- ::RULES::
-
--- Gavialis Helm will automatically be used for all weaponskills on their respective days of the week. If you don't want
--- it used for a ws, then you have to add the WS to wsList = {} in job_setup. You also need my User-Globals.lua for this
--- to even work. 
-
--- Ygna's Resolve +1 will automatically be used when you're in a reive. If you have my User-Globals.lua this will work
--- with all your jobs that use mote's includes. Not just this one! 
-
--- Moonshade earring is not used for WS's at 3000 TP. 
-
--- You can hit F12 to display custom MODE status as well as the default stuff. 
-
--- Single handed weapons are han
-
--- ::NOTES::
-
--- All of the default sets are geared around scythe. There is support for great sword by using 
--- sets.engaged.Ragnarok but you will have to edit gsList in job_setup so that your GS is present. IF you would rather
--- all the default sets (like sets.engaged, etc.) cater to great sword instead of scyth, then simply remove the great swords 
--- listed in gsList and ignore sets.engaged.Ragnarok. (but dont delete it)  
-
--- Set format is as follows: 
--- sets.engaged.[CombatForm][CombatWeapon][Offense or HybridMode][CustomMeleeGroups]
-
--- CombatForm = Haste, DW, SW
--- CombatWeapon = Ragnarok, Apocalypse, Ragnarok
--- OffenseMode = Normal, Mid, Acc
--- HybridMode = Normal, PDT
--- CustomMeleeGroups = AM3, AM
-
--- CombatForm Haste is used when Last Resort AND either Haste, March, Indi-Haste Geo-Haste is on you.
--- This allows you to equip full acro, even though it doesn't have 25% gear haste. You still cap. 
-
--- CombatForm DW will activate with /dnc or /nin AND a weapon listed in drk_sub_weapons equipped offhand. 
---          SW is active with an empty sub-slot, or a shield listed in the shields = S{} list.  
-
--- CombatWeapon Ragnarok will activate when you equip a GS listed in gsList in job_setup(). Apocalypse and Ragnarok are
--- active when either weapon is equipped. If you have trouble creating sets for Ragnarok, study how I've defined Apoc's sets.
-
--- CustomMeleeGroups AM3 will activate when Aftermath lvl 3 is up, and AM will activate when relic Aftermath is up.
-
-
---
--- Initialization function for this job file.
-
--- Original: Motenten / Modified: Arislan
--- Haste/DW Detection Requires Gearinfo Addon
-
--------------------------------------------------------------------------------------------------------------------
---  Keybinds
--------------------------------------------------------------------------------------------------------------------
-
---  Modes:      [ F9 ]              Cycle Offense Modes
---              [ CTRL+F9 ]         Cycle Hybrid Modes
---              [ ALT+F9 ]          Last Resort
---              [ WIN+F9 ]          Cycle Weapon Skill Modes
---              [ F10 ]             Emergency -PDT Mode
---              [ ALT+F10 ]         Toggle Kiting Mode
---              [ F11 ]             Emergency -MDT Mode
---              [ F12 ]             Update Current Gear / Report Current Status
---              [ CTRL+F12 ]        Cycle Idle Modes
---              [ ALT+F12 ]         Cancel Emergency -PDT/-MDT Mode
---              [ WIN+C ]           Toggle Capacity Points Mode
---
---  Abilities:  [ CTRL+NumLock ]    Hasso
---              [ CTRL+Numpad/ ]    Berserk/Meditate
---              [ CTRL+Numpad* ]    Warcry/Sekkanoki
---              [ CTRL+Numpad- ]    Aggressor/Third Eye
---
---  Spells:     [ WIN+, ]           Utsusemi: Ichi
---              [ WIN+. ]           Utsusemi: Ni
---
---  Weapons:    [ WIN+E/R ]         Cycles between available Weapon Sets
---              [ WIN+W ]           Toggle Ranged Weapon Lock
---
---  WS:         [ CTRL+Numpad2 ]    Quietus
---              [ CTRL+Numpad3 ]    Insurgency
---              [ CTRL+Numpad4 ]    Catastrophe
---				[ CTRL+Numpad5 ]    Entropy
---				[ CTRL+Numpad6 ]	Scourge
---				[ CTRL+Numpad7 ]	Resolution	
---				[ CTRL+Numpad8 ]	Torcleaver
---  JA:         [ Numpad0 ]         SouleaterMode
---
---              (Global-Binds.lua contains additional non-job-related keybinds)
-
-
--------------------------------------------------------------------------------------------------------------------
--- Setup functions for this job.  Generally should not be modified.
--------------------------------------------------------------------------------------------------------------------
-
--- Initialization function for this job file.
-function get_sets()
-    mote_include_version = 2
-
-    -- Load and initialize the include file.
-    include('Mote-Include.lua')
-end
-
-
--- Setup vars that are user-independent.  state.Buff vars initialized here will automatically be tracked.
-function job_setup()
-    state.Buff.Barrage = buffactive.Barrage or false
-    state.Buff.Camouflage = buffactive.Camouflage or false
-    state.Buff['Last Resort'] = buffactive['Last Resort'] or false
-    state.Buff['Souleater'] = buffactive['Souleater'] or false
- --   state.Buff['Double Shot'] = buffactive['Double Shot'] or false
-
-    state.DualWield = M(false, 'Dual Wield III')
-
-    -- Whether a warning has been given for low ammo
-    state.warned = M(false)
-
-end
-
--------------------------------------------------------------------------------------------------------------------
--- User setup functions for this job.  Recommend that these be overridden in a sidecar file.
--------------------------------------------------------------------------------------------------------------------
-
--- Setup vars that are user-dependent.  Can override this function in a sidecar file.
-function user_setup()
-    state.OffenseMode:options('STP', 'Normal', 'LowAcc', 'MidAcc', 'HighAcc')
-    state.HybridMode:options('Normal', 'DT', 'Reraise')
-    state.WeaponskillMode:options('Normal', 'Acc')
-    state.IdleMode:options('Normal', 'DT')
-	state.Reraise:Options ()
-    state.WeaponSet = M 'description'=='Weapon Set', 'Catastrophe', 'Insurgency', 'Quietus', 'Entropy', 'Resolution', 'Torcleaver'
-    state.CP = M(false, "Capacity Points Mode")
-    state.WeaponLock = M(false, 'Weapon Lock')
-
-
-
-    -- Additional local binds
-    include('Global-Binds.lua') -- OK to remove this line
-    include('Global-GEO-Binds.lua') -- OK to remove this line
-
-    if player.sub_job == 'NIN' or player.sub_job == 'DNC' then
-        send_command('lua l gearinfo')
-    end
-
-    send_command('bind ^` input /ja "Souleater" <me>')
-    send_command ('bind @` input /ja "Diabolic Eye" <me>')
-	send_command('bind ^` input /ja "Last Resort" <me>')
-    send_command ('bind @` input /ja "Dark Seal" <me>')
-	send_command('bind ^` input /ja "Nether Void" <me>')
-    send_command ('bind @` input /ja "Consume Mana" <me>')
-
-    if player.sub_job == 'DNC' then
-        send_command('bind ^, input /ja "Spectral Jig" <me>')
-        send_command('unbind ^.')
-    else
-        send_command('bind ^, input /item "Silent Oil" <me>')
-        send_command('bind ^. input /item "Prism Powder" <me>')
-    end
-
-    send_command('bind @c gs c toggle CP')
-    send_command('bind @e gs c cycleback WeaponSet')
-    send_command('bind @r gs c cycle WeaponSet')
-    send_command('bind @w gs c toggle WeaponLock')
-
-    send_command('bind ^numlock input /ja "Double Shot" <me>')
-
-    if player.sub_job == 'WAR' then
-        send_command('bind ^numpad/ input /ja "Berserk" <me>')
-        send_command('bind ^numpad* input /ja "Warcry" <me>')
-        send_command('bind ^numpad- input /ja "Aggressor" <me>')
-    elseif player.sub_job == 'SAM' then
-        send_command('bind ^numpad/ input /ja "Meditate" <me>')
-        send_command('bind ^numpad* input /ja "Sekkanoki" <me>')
-        send_command('bind ^numpad- input /ja "Third Eye" <me>')
-    end
-
-    send_command('bind ^numpad8 input /ws "Torcleaver" <t>')
-    send_command('bind ^numpad7 input /ws "Resolution" <t>')
-    send_command('bind ^numpad6 input /ws "Scourge" <t>')
-    send_command('bind ^numpad5 input /ws "Entropy" <t>')
-    send_command('bind ^numpad4 input /ws "Catastrophe" <t>')
-    send_command('bind ^numpad3 input /ws "Insurgency" <t>')
-	send_command('bind ^Crtl22 input /ws "Quietus" <t>')
---	send_command('bind ^crt1 input /ws "Numbing Shot" <t>')   
-    send_command('bind numpad0 input /ja "Souleater" <t>')
-
-    select_default_macro_book(1.7)
-    set_lockstyle()
-
-    Haste = 0
-    DW_needed = 0
-    DW = false
-    moving = false
-    update_combat_form()
-    determine_haste_group()
-end
-
-
--- Called when this job file is unloaded (eg: job change)
-function user_unload()
-    send_command('unbind f9')
-    send_command('unbind ^f9')
-    send_command('unbind ^`')
-    send_command('unbind !`')
-    send_command('unbind @`')
-    send_command('unbind ^,')
-    send_command('unbind @f')
-    send_command('unbind @c')
-    send_command('unbind @w')
-    send_command('unbind @e')
-    send_command('unbind @r')
-    send_command('unbind ^numlock')
-    send_command('unbind ^numpad/')
-    send_command('unbind ^numpad*')
-    send_command('unbind ^numpad-')
-    send_command('unbind ^numpad7')
-    send_command('unbind ^numpad8')
-    send_command('unbind ^numpad4')
-    send_command('unbind ^numpad6')
-    send_command('unbind ^numpad2')
-    send_command('unbind ^numpad3')
-    send_command('unbind numpad0')
-
-    send_command('unbind #`')
-    send_command('unbind #1')
-    send_command('unbind #2')
-    send_command('unbind #3')
-    send_command('unbind #4')
-    send_command('unbind #5')
-    send_command('unbind #6')
-    send_command('unbind #7')
-    send_command('unbind #8')
-    send_command('unbind #9')
-    send_command('unbind #0')
-
-    if player.sub_job == 'NIN' or player.sub_job == 'DNC' then
-        send_command('lua u gearinfo')
-    end
-
-end
---require("nest")
-
-function get_sets()
-    mote_include_version = 2
-    -- Load and initialize the include file.
-    include('Mote-Include.lua')
-
-end
-
-
--- Setup vars that are user-independent.
-function job_setup()
-    state.CapacityMode = M(false, 'Capacity Point Mantle')
-
-    state.Buff.Souleater = buffactive.souleater or false
-    state.Buff['Last Resort'] = buffactive['Last Resort'] or false
-	
-    -- Set the default to false if you'd rather SE always stay acitve
-	
-    state.SouleaterMode = M(false, 'Soul Eater Mode')
-    state.LastResortMode = M(false, 'Last Resort Mode')
-	
-    -- Weaponskills you do NOT want Gavialis helm used with
-    wsList = S{'Spiral Hell', 'Torcleaver', 'Insurgency', 'Quietus'}
-
-    -- Ragnaroks you use. 
-    gsList = S{'Caladbolg', 'Macbain', 'Kaquljaan', 'Mekosuchus Blade' }
-	
-    -- Mote has capitalization errors in the default Absorb mappings, so we correct them
-    absorbs = S{'Absorb-STR', 'Absorb-DEX', 'Absorb-VIT', 'Absorb-AGI', 'Absorb-INT', 'Absorb-MND', 'Absorb-CHR', 'Absorb-Attri', 'Absorb-ACC', 'Absorb-TP'}
-
-    shields = S{'Rinda Shield'}
-	
- --   get_combat_form()
- --   get_combat_weapon()
- --   update_melee_groups()
-end
-
-
--- Setup vars that are user-dependent.  Can override this function in a sidecar file.
-function user_setup()
-    -- Options: Override default values
-    state.OffenseMode:options('Normal', 'Mid', 'Acc')
-    state.HybridMode:options('Normal', 'PDT')
-    state.WeaponskillMode:options('Normal', 'Mid', 'Acc')
-    state.CastingMode:options('Normal', 'Acc')
-    state.IdleMode:options('Normal')
-    state.RestingMode:options('Normal')
-    state.PhysicalDefenseMode:options('PDT', 'Reraise')
-    state.MagicalDefenseMode:options('MDT')
-
-    war_sj = player.sub_job == 'WAR' or false
-
-    -- Additional local binds
-    send_command('bind != gs c toggle CapacityMode')
-    send_command('bind @f9 gs c toggle SouleaterMode')
-	send_command('bind @F5 gs c toggle PhysicalDefenseMode')
-    --send_command('bind ^` gs c toggle LastResortMode')de')
-    select_default_macro_book(7.1)
-end
-
--- Called when this job file is unloaded (eg: job change)
-function file_unload()
-    send_command('unbind ^`')
-    send_command('unbind !=')
-    send_command('unbind ^[')
-    send_command('unbind ![')
-    send_command('unbind @f9')
-end
-
-
--- Define sets and vars used by this job file.
+-- for those who want to know how to build and want to find my offical Dark Knight lua i made then ask me in game.
+-- i made this from scratch 
 function init_gear_sets()
     --------------------------------------
     -- Start defining the sets
@@ -800,7 +457,7 @@ function init_gear_sets()
     right_ring="Niqmaddu Ring",
     back={ name="Ankou's Mantle", augments={'STR+20','Accuracy+20 Attack+20','STR+9','Weapon skill damage +10%','Damage taken-5%',}},
     })
-    sets.precast.WS['Cross Reaper'].AM3 = set_combine(sets.precast.WS['Cross Reaper'], {
+    sets.precast.WS{'Cross Reaper'}.AM3 = set_combine('sets.precast.WS','Cross Reaper' {
     ammo="Knobkierrie",
     head="Ratri Sallet",
     body="Ignominy Cuirass +3",
@@ -824,7 +481,7 @@ function init_gear_sets()
 
     -- ENTROPY
     -- 86-100% INT 
-    sets.precast.WS.Entropy = set_combine(sets.precast.WS, {
+    sets.precast.WS.Entropy = set_combine('sets.precast.WS' {
     ammo="Knobkierrie",
     head="Flam. Zucchetto +2",
     body="Ignominy Cuirass +3",
@@ -840,7 +497,7 @@ function init_gear_sets()
     back={ name="Ankou's Mantle", augments={'STR+20','Accuracy+20 Attack+20','STR+9','Weapon skill damage +10%','Damage taken-5%',}},
     })
 
-    sets.precast.WS.Entropy.Mid = set_combine(sets.precast.WS.Entropy, {
+    sets.precast.WS.Entropy.Mid = set_combine('sets.precast.WS.Entropy' {
     ammo="Knobkierrie",
     head="Ratri Sallet",
     body="Ignominy Cuirass +3",
@@ -856,7 +513,7 @@ function init_gear_sets()
     back={ name="Ankou's Mantle", augments={'STR+20','Accuracy+20 Attack+20','STR+9','Weapon skill damage +10%','Damage taken-5%',}},
     })
 
-    sets.precast.WS.Entropy.Acc = set_combine(sets.precast.WS.Entropy.Mid, {
+    sets.precast.WS.Entropy.Acc = set_combine('sets.precast.WS.Entropy.Mid'	{
     ammo="Knobkierrie",
     head="Flam. Zucchetto +2",
     body="Ignominy Cuirass +3",
@@ -872,17 +529,17 @@ function init_gear_sets()
     back={ name="Ankou's Mantle", augments={'STR+20','Accuracy+20 Attack+20','STR+9','Weapon skill damage +10%','Damage taken-5%',}},
     })
 --Insurgency
-   sets.precast.WS.Insurgency.acc = set_combine(sets.precast.WS.Insurgency, {
+   --sets.precast.WS.Insurgency.acc = set_combine(sets.precast.WS.Insurgency, {
 
 
-   sets.precast.WS.Insurgency
+   --sets.precast.WS.Insurgency
 --
   
 --Redemption
 	
 	-- Quietus
     -- 60% STR / MND 
-    sets.precast.WS.Quietus = set_combine('sets.precast.WS','sets.precast.WS.Quietus') {
+    sets.precast.WS.Quietus = set_combine('sets.precast.WS', {
     ammo="Knobkierrie",
     head="Flam. Zucchetto +2",
     body="Ignominy Cuirass +3",
@@ -896,9 +553,9 @@ function init_gear_sets()
     left_ring="Flamma Ring",
     right_ring="Niqmaddu Ring",
     back={ name="Ankou's Mantle", augments={'STR+20','Accuracy+20 Attack+20','STR+9','Weapon skill damage +10%','Damage taken-5%',}},
-    }
+    })
 
-    sets.precast.WS.Quietus.Mid = set_combine(sets.precast.WS.Quietus, {
+    sets.precast.WS.Quietus.Mid = set_combine('sets.precast.WS.Quietus' {
     ammo="Knobkierrie",
     head="Ratri Sallet",
     body="Ignominy Cuirass +3",
@@ -1816,13 +1473,13 @@ end
 function select_default_macro_book()
 	-- Default macro set/book
 	if player.sub_job == 'WAR'then
-		    set_macro_page(1, 7)
+		    set_macro_page(,)
 	elseif player.sub_job == 'SAM' then
-		    set_macro_page(1, 7)
+		    set_macro_page(,)
 	else
-		set_macro_page(1, 7)
+		set_macro_page(,)
 	end
 
 end
 
---made by Sialeed--
+--made by Asura Sialeed--
